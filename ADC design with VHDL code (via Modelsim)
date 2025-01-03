@@ -1,0 +1,61 @@
+library IEEE; 
+use IEEE.STD_LOGIC_1164.ALL; -- Mant?k i?lemleri
+use IEEE.NUMERIC_STD.ALL; -- Say?sal i?lemleri
+
+entity adcodev is --Tan?mlama yap
+    Port(
+        A : in STD_LOGIC := '1'; -- Giri? sinyali A
+        B : in STD_LOGIC := '1'; -- Giri? sinyali B
+        C : in STD_LOGIC := '1'; -- Giri? sinyali C
+        clock : in STD_LOGIC; -- Saat sinyali
+        reset : in STD_LOGIC := '0'; 
+        analog_giris : in STD_LOGIC_VECTOR(7 downto 0) := "00001110"; 
+        cikis_value : out STD_LOGIC_VECTOR(7 downto 0) := "00000000" 
+    );
+end adcodev;
+
+architecture Behavioral of adcodev    is -- Mimari tan?m?
+    signal hafiza2 : unsigned(7 downto 0) := (others => '0'); -- 8-bitlik haf?za2 sinyali
+    signal sayac : unsigned(3 downto 0) := (others => '0'); -- 4-bitlik sayaç sinyali
+    signal hafiza1 : unsigned(7 downto 0) := (others => '0'); -- 8-bitlik haf?za1 sinyali
+begin
+    process(clock, reset)
+    begin
+        if reset = '1' then 
+            hafiza1 <= (others => '0'); 
+            sayac <= (others => '0');
+            hafiza2 <= (others => '0'); 
+        elsif rising_edge(clock) then -- Saat sinyalinin yükselen kenar?
+            if A = '1' and B = '0' and C = '0' then 
+                if unsigned(analog_giris) < hafiza1 then 
+                    if hafiza1 > 0 then
+                        hafiza1 <= hafiza1 - 1; 
+                        cikis_value <= std_logic_vector(hafiza1); 
+                    end if;
+                elsif unsigned(analog_giris) > hafiza1 then 
+                    if hafiza1 < 255 then 
+                        hafiza1 <= hafiza1 + 1;
+                        cikis_value <= std_logic_vector(hafiza1); 
+                    end if;
+                end if;
+            end if;
+            if not (A = '1' and B = '0' and C = '0') then 
+                sayac <= sayac + 1; 
+                if sayac > 8 then -- Sayaç 8'den büyükse
+                    if unsigned(analog_giris) < hafiza2 then
+                        if hafiza2 > 0 then 
+                            hafiza2 <= hafiza2 - 1; 
+                            cikis_value <= std_logic_vector(hafiza2); 
+                        end if;
+                    elsif unsigned(analog_giris) > hafiza2 then 
+                        if hafiza2 < 255 then
+                            hafiza2 <= hafiza2 + 1; 
+                            cikis_value <= std_logic_vector(hafiza2); 
+                        end if;
+                    end if;
+                    sayac <= (others => '0'); -- Sayaç s?f?rlan?r
+                end if;
+            end if;
+        end if;
+    end process;
+end Behavioral;
